@@ -1,0 +1,26 @@
+buildscript {
+    ext {
+        agp_version = '8.1.2'
+    }
+}
+
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+
+    /**
+     * Use `apply false` in the top-level build.gradle file to add a Gradle
+     * plugin as a build dependency but not apply it to the current (root)
+     * project. Don't use `apply false` in sub-projects. For more information,
+     * see Applying external plugins with same version to subprojects.
+     */
+
+	id 'com.android.application' version "$agp_version" apply false
+}
+
+ext {
+    appcompatVersion = '1.6.1'
+    materialVersion = '1.10.0'
+    constraintlayoutVersion = '2.1.4'
+    preferenceVersion = '1.2.1'
+    lifecycle_version = '2.6.2'
+}
