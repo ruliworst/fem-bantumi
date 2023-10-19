@@ -1,7 +1,6 @@
 package es.upm.miw.bantumi;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -116,21 +115,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        DialogInterface.OnClickListener restartDialogListener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which){
-                    case DialogInterface.BUTTON_POSITIVE:
-                        Log.i("MiW", "YES was clicked.");
-                        break;
-
-                    case DialogInterface.BUTTON_NEGATIVE:
-                        Log.i("MiW", "NO was clicked.");
-                        break;
-                }
-            }
-        };
-
         switch (item.getItemId()) {
 //            case R.id.opcAjustes: // @todo Preferencias
 //                startActivity(new Intent(this, BantumiPrefs.class));
@@ -145,13 +129,9 @@ public class MainActivity extends AppCompatActivity {
 
             // @TODO!!! resto opciones
             case R.id.opcReiniciarPartida:
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.txtReiniciarPartida)
-                        .setMessage(R.string.reiniciarPregunta)
-                        .setPositiveButton(android.R.string.yes, restartDialogListener)
-                        .setNegativeButton(android.R.string.no, restartDialogListener)
-                        .show();
+                new RestartDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
                 return true;
+
             default:
                 Snackbar.make(
                         findViewById(android.R.id.content),
