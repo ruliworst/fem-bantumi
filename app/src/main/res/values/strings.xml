@@ -43,6 +43,9 @@
     <string name="prefTituloCategoria2">Ajustes del juego</string>
     <string name="prefTituloCategoria3">Más información…</string>
 
+    <!-- Reiniciar -->
+    <string name="reiniciarPregunta">¿Desea reiniciar la partida?</string>
+
     <!-- Diálogo Final -->
     <string name="txtDialogoFinalTitulo">Fin del juego</string>
     <string name="txtDialogoFinalPregunta">¿Desea jugar otra partida?</string>
