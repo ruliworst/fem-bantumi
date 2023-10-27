@@ -1,6 +1,7 @@
 package es.upm.miw.bantumi;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -15,6 +16,11 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.util.Locale;
 
 import es.upm.miw.bantumi.model.BantumiViewModel;
@@ -26,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     BantumiViewModel bantumiVM;
     int numInicialSemillas;
 
+    public String infoPartida = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +42,12 @@ public class MainActivity extends AppCompatActivity {
         // Instancia el ViewModel y el juego, y asigna observadores a los huecos
         numInicialSemillas = getResources().getInteger(R.integer.intNumInicialSemillas);
         bantumiVM = new ViewModelProvider(this).get(BantumiViewModel.class);
-        juegoBantumi = new JuegoBantumi(bantumiVM, JuegoBantumi.Turno.turnoJ1, numInicialSemillas);
+        juegoBantumi = new JuegoBantumi(
+                MainActivity.this,
+                this,
+                bantumiVM,
+                JuegoBantumi.Turno.turnoJ1,
+                numInicialSemillas);
         crearObservadores();
     }
 
@@ -132,6 +145,14 @@ public class MainActivity extends AppCompatActivity {
                 new RestartDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
                 return true;
 
+            case R.id.opcGuardarPartida:
+                this.guardarPartida();
+                return true;
+
+            case R.id.opcRecuperarPartida:
+                this.recuperarPartida();
+                return true;
+
             default:
                 Snackbar.make(
                         findViewById(android.R.id.content),
@@ -140,6 +161,49 @@ public class MainActivity extends AppCompatActivity {
                 ).show();
         }
         return true;
+    }
+
+    private String getArchivoPartidaGuardada() {
+        return "partidaGuardada.txt";
+    }
+
+    private void guardarPartida() {
+        try {
+            FileOutputStream fos = getApplicationContext().openFileOutput(this.getArchivoPartidaGuardada(), Context.MODE_PRIVATE);
+            String info = juegoBantumi.serializa();
+            fos.write(info.toString().getBytes());
+            fos.close();
+            Log.i("MiW", "Saved game.");
+        } catch (Exception exception) {
+            Log.e("MiW", "FILE I/O ERROR" + exception.getMessage());
+            exception.printStackTrace();
+        }
+    }
+
+    private void recuperarPartida() {
+        Boolean hayContenido = false;
+        try {
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(openFileInput(this.getArchivoPartidaGuardada())));
+            String estadoPartida = br.readLine();
+            if (!estadoPartida.isEmpty() && !estadoPartida.equals(juegoBantumi.serializa())) {
+                this.infoPartida = estadoPartida;
+                hayContenido = true;
+                new RecoverDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
+            }
+            br.close();
+        } catch (Exception exception) {
+            Log.e("MiW", "FILE I/O ERROR" + exception.getMessage());
+            exception.printStackTrace();
+        }
+
+        if (!hayContenido) {
+            Snackbar.make(
+                    findViewById(android.R.id.content),
+                    "No hay ninguna partida guardada.",
+                    Snackbar.LENGTH_SHORT
+            );
+        }
     }
 
     /**

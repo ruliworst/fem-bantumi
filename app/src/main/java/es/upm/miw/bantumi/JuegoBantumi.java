@@ -1,6 +1,21 @@
 package es.upm.miw.bantumi;
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.TextView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.StringReader;
+import java.util.HashMap;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
 
 import es.upm.miw.bantumi.model.BantumiViewModel;
 
@@ -22,6 +37,9 @@ public class JuegoBantumi {
     // Número inicial de semillas
     private final int numInicialSemillas;
 
+    private Context context;
+    private Activity activity;
+
     /**
      * Constructor
      *
@@ -30,7 +48,14 @@ public class JuegoBantumi {
      * @param turno especifica el turno inicial <code>[Turno.turnoJ1 || Turno.turnoJ2]</code>
      * @param numInicialSemillas Número de semillas al inicio del juego
      */
-    public JuegoBantumi(BantumiViewModel bantumiVM, Turno turno, int numInicialSemillas) {
+    public JuegoBantumi(
+            Context context,
+            Activity activity,
+            BantumiViewModel bantumiVM,
+            Turno turno,
+            int numInicialSemillas) {
+        this.context = context;
+        this.activity = activity;
         this.bantumiVM = bantumiVM;
         this.numInicialSemillas = numInicialSemillas;
         if (campoVacio(Turno.turnoJ1) && campoVacio(Turno.turnoJ2)) { // Inicializa sólo si está vacío!!!
@@ -192,8 +217,31 @@ public class JuegoBantumi {
      * @return juego serializado
      */
     public String serializa() {
-        // @TODO
-        return null;
+        JSONObject info = new JSONObject();
+        try {
+            JSONObject casillas = new JSONObject();
+            for (int i = 0; i <= 13; i++) {
+                String numero = Integer.toString(i);
+                if (i < 10) {
+                    numero = "0" + numero;
+                }
+                int id = context.getResources().getIdentifier("casilla_" + numero, "id", context.getPackageName());
+                if (numero.equals("13") || numero.equals("06")) {
+                    TextView tv = activity.findViewById(id);
+                    casillas.put("casilla_" + numero,  tv.getText());
+                } else {
+                    Button button = activity.findViewById(id);
+                    casillas.put("casilla_" + numero, button.getText());
+                }
+            }
+
+            info.put("casillas", casillas);
+            info.put("turno", this.turnoActual());
+        } catch (JSONException exception) {
+            Log.e("MiW", "It was not possible to serialize the information.");
+        }
+
+        return info.toString();
     }
 
     /**
@@ -202,6 +250,29 @@ public class JuegoBantumi {
      * @param juegoSerializado cadena que representa el estado completo del juego
      */
     public void deserializa(String juegoSerializado) {
-        // @TODO
+        try {
+            JSONObject info = new JSONObject(juegoSerializado);
+            JSONObject casillas = info.getJSONObject("casillas");
+
+            for (int i = 0; i <= 13; i++) {
+                String numero = Integer.toString(i);
+                if (i < 10) {
+                    numero = "0" + numero;
+                }
+                String numeroGuardado = casillas.getString("casilla_" + numero);
+                int id = context.getResources().getIdentifier("casilla_" + numero, "id", context.getPackageName());
+                if (numero.equals("13") || numero.equals("06")) {
+                    TextView tv = activity.findViewById(id);
+                    tv.setText(numeroGuardado);
+                } else {
+                    Button button = activity.findViewById(id);
+                    button.setText(numeroGuardado);
+                }
+            }
+            Turno turno = Turno.valueOf(info.getString("turno"));
+            this.setTurno(turno);
+        } catch (JSONException exception) {
+            Log.e("MiW", "It was not possible to deserialize the information.");
+        }
     }
 }
