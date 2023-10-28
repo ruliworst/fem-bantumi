@@ -2,6 +2,8 @@ package es.upm.miw.bantumi;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -13,31 +15,44 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.snackbar.Snackbar;
-
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
 import java.util.Locale;
+import java.time.format.DateTimeFormatter;
 
 import es.upm.miw.bantumi.model.BantumiViewModel;
+import es.upm.miw.bantumi.model.resultado.Resultado;
+import es.upm.miw.bantumi.model.resultado.ResultadoBuilder;
+import es.upm.miw.bantumi.model.resultado.ResultadoViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
-    protected final String LOG_TAG = "MiW";
+    protected static final String LOG_TAG = "MiW";
+
     JuegoBantumi juegoBantumi;
+
     BantumiViewModel bantumiVM;
+
     int numInicialSemillas;
 
     public String infoPartida = "";
+
+    ResultadoViewModel resultadoViewModel;
+
+    SharedPreferences preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        this.resultadoViewModel = new ViewModelProvider(this).get(ResultadoViewModel.class);
 
         // Instancia el ViewModel y el juego, y asigna observadores a los huecos
         numInicialSemillas = getResources().getInteger(R.integer.intNumInicialSemillas);
@@ -60,21 +75,11 @@ public class MainActivity extends AppCompatActivity {
             int finalI = i;
             bantumiVM.getNumSemillas(i).observe(    // Huecos y almacenes
                     this,
-                    new Observer<Integer>() {
-                        @Override
-                        public void onChanged(Integer integer) {
-                            mostrarValor(finalI, juegoBantumi.getSemillas(finalI));
-                        }
-                    });
+                    integer -> mostrarValor(finalI, juegoBantumi.getSemillas(finalI)));
         }
         bantumiVM.getTurno().observe(   // Turno
                 this,
-                new Observer<JuegoBantumi.Turno>() {
-                    @Override
-                    public void onChanged(JuegoBantumi.Turno turno) {
-                        marcarTurno(juegoBantumi.turnoActual());
-                    }
-                }
+                turno -> marcarTurno(juegoBantumi.turnoActual())
         );
     }
 
@@ -129,9 +134,6 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
-//            case R.id.opcAjustes: // @todo Preferencias
-//                startActivity(new Intent(this, BantumiPrefs.class));
-//                return true;
             case R.id.opcAcercaDe:
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.aboutTitle)
@@ -140,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
                         .show();
                 return true;
 
-            // @TODO!!! resto opciones
             case R.id.opcReiniciarPartida:
                 new RestartDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
                 return true;
@@ -153,6 +154,16 @@ public class MainActivity extends AppCompatActivity {
                 this.recuperarPartida();
                 return true;
 
+            case R.id.opcAjustes:
+                Intent ajustes = new Intent(this, SettingsActivity.class);
+                startActivity(ajustes);
+                return true;
+
+            case R.id.opcMejoresResultados:
+                Intent resultados = new Intent(this, ResultadosActivity.class);
+                startActivity(resultados);
+                return true;
+
             default:
                 Snackbar.make(
                         findViewById(android.R.id.content),
@@ -163,6 +174,14 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    }
+
+
     private String getArchivoPartidaGuardada() {
         return "partidaGuardada.txt";
     }
@@ -171,17 +190,17 @@ public class MainActivity extends AppCompatActivity {
         try {
             FileOutputStream fos = getApplicationContext().openFileOutput(this.getArchivoPartidaGuardada(), Context.MODE_PRIVATE);
             String info = juegoBantumi.serializa();
-            fos.write(info.toString().getBytes());
+            fos.write(info.getBytes());
             fos.close();
             Log.i("MiW", "Saved game.");
         } catch (Exception exception) {
-            Log.e("MiW", "FILE I/O ERROR" + exception.getMessage());
+            Log.e("MiW", R.string.IOError + exception.getMessage());
             exception.printStackTrace();
         }
     }
 
     private void recuperarPartida() {
-        Boolean hayContenido = false;
+        boolean hayContenido = false;
         try {
             BufferedReader br = new BufferedReader(
                     new InputStreamReader(openFileInput(this.getArchivoPartidaGuardada())));
@@ -193,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
             }
             br.close();
         } catch (Exception exception) {
-            Log.e("MiW", "FILE I/O ERROR" + exception.getMessage());
+            Log.e("MiW", R.string.IOError + exception.getMessage());
             exception.printStackTrace();
         }
 
@@ -202,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
                     findViewById(android.R.id.content),
                     "No hay ninguna partida guardada.",
                     Snackbar.LENGTH_SHORT
-            );
+            ).show();
         }
     }
 
@@ -246,15 +265,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setNombreJugador() {
+        String nombre = this.obtenerNombreAjustes();
+        TextView tvJugador1 = findViewById(R.id.tvPlayer1);
+        tvJugador1.setText(nombre);
+    }
+
+    private String obtenerNombreAjustes() {
+        String nombre = preferences.getString(getString(R.string.nombreJugadorKey), getString(R.string.txtPlayer1));
+        return nombre.isEmpty() ? getString(R.string.txtPlayer1) : nombre;
+    }
+
     /**
      * El juego ha terminado. Volver a jugar?
      */
     private void finJuego() {
-        String texto = (juegoBantumi.getSemillas(6) > 6 * numInicialSemillas)
-                ? "Gana Jugador 1"
-                : "Gana Jugador 2";
+        boolean empate = false;
+        String ganador = (juegoBantumi.getSemillas(6) > 6 * numInicialSemillas)
+                ? this.obtenerNombreAjustes()
+                : getString(R.string.txtPlayer2);
+
+        String texto = String.format("Gana %s", ganador);
+
         if (juegoBantumi.getSemillas(6) == 6 * numInicialSemillas) {
             texto = "¡¡¡ EMPATE !!!";
+            empate = true;
         }
         Snackbar.make(
                 findViewById(android.R.id.content),
@@ -263,7 +298,23 @@ public class MainActivity extends AppCompatActivity {
         )
         .show();
 
-        // @TODO guardar puntuación
+        int posicionGanador = ganador.equals(this.obtenerNombreAjustes())
+                ? 6 :
+                JuegoBantumi.NUM_POSICIONES - 1;
+        int posicionPerdedor = posicionGanador == 6
+                ? JuegoBantumi.NUM_POSICIONES - 1
+                : 6;
+
+        ResultadoBuilder builder = new Resultado.Builder();
+        Resultado resultado = builder
+                .setGanador(ganador)
+                .setEmpate(empate)
+                .setFecha(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .setSemillasGanador(this.juegoBantumi.getSemillas(posicionGanador))
+                .setSemillasPerdedor(this.juegoBantumi.getSemillas(posicionPerdedor))
+                .build();
+
+        this.resultadoViewModel.insertar(resultado);
 
         // terminar
         new FinalAlertDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");

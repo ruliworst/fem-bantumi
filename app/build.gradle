@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "es.upm.miw.bantumi"
-        minSdk 23
+        minSdk 26
         targetSdk 32
         versionCode 1
         versionName "1.0"
@@ -38,4 +38,9 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-livedata-core:$lifecycle_version"
 
     implementation group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
+
+    // Room components
+    implementation "androidx.room:room-runtime:$rootProject.roomVersion"
+    implementation 'androidx.preference:preference:1.2.1'
+    annotationProcessor "androidx.room:room-compiler:$rootProject.roomVersion"
 }

@@ -23,4 +23,5 @@ ext {
     constraintlayoutVersion = '2.1.4'
     preferenceVersion = '1.2.1'
     lifecycle_version = '2.6.2'
+    roomVersion = '2.5.2'
 }

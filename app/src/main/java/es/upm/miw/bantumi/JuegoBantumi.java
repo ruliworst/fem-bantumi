@@ -9,14 +9,6 @@ import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.StringReader;
-import java.util.HashMap;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
-
 import es.upm.miw.bantumi.model.BantumiViewModel;
 
 public class JuegoBantumi {
@@ -37,8 +29,8 @@ public class JuegoBantumi {
     // Número inicial de semillas
     private final int numInicialSemillas;
 
-    private Context context;
-    private Activity activity;
+    private final Context context;
+    private final Activity activity;
 
     /**
      * Constructor
