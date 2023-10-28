@@ -38,7 +38,6 @@ public class FinalAlertDialog extends DialogFragment {
                             }
                         }
                 );
-
-		return builder.create();
+        return builder.create();
 	}
 }

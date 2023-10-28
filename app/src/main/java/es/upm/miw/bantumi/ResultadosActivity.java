@@ -67,6 +67,7 @@ public class ResultadosActivity extends AppCompatActivity {
                 .setTitle(R.string.txtBorrarTodos)
                 .setMessage(R.string.pregBorrarTodos)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> resultadoViewModel.borrarTodos())
-                .setNegativeButton(android.R.string.cancel, (dialog, which) -> {});
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> {})
+                .show();
     }
 }
