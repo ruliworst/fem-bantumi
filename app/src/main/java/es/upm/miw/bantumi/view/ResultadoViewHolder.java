@@ -17,24 +17,26 @@ public class ResultadoViewHolder extends RecyclerView.ViewHolder {
     TextView tvEmpate;
     TextView tvFecha;
 
-
     public ResultadoViewHolder(@NonNull View itemView) {
         super(itemView);
         this.tvGanador = itemView.findViewById(R.id.tvGanador);
         this.tvSemillasGanador = itemView.findViewById(R.id.tvSemillasGanador);
         this.tvEmpate = itemView.findViewById(R.id.tvEmpate);
         this.tvFecha = itemView.findViewById(R.id.tvFecha);
-
     }
 
     static ResultadoViewHolder create(ViewGroup parent) {
-        View view = LayoutInflater.from(parent.getContext())
+        View view = LayoutInflater
+                .from(parent.getContext())
                 .inflate(R.layout.resultado_view_item, parent, false);
+
         return new ResultadoViewHolder(view);
     }
 
     public void bind(Resultado resultado) {
-        this.tvGanador.setText(resultado.getEmpate() ? "Ordenador" : resultado.getGanador());
+        this.tvGanador.setText(resultado.getEmpate()
+                ? "Empate"
+                : resultado.getGanador());
         this.tvSemillasGanador.setText(resultado.getSemillasGanador().toString());
         this.tvEmpate.setText(resultado.getEmpate()
                 ? itemView.getResources().getString(R.string.yes)

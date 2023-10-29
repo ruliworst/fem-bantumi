@@ -7,15 +7,14 @@ import androidx.lifecycle.LiveData;
 
 import java.util.List;
 
-
 public class ResultadoViewModel extends AndroidViewModel {
     private final ResultadoRepository resultadoRepository;
-    private final LiveData<List<Resultado>> mejoresresultados;
+    private final LiveData<List<Resultado>> mejoresResultados;
 
     public ResultadoViewModel(Application application) {
         super(application);
         this.resultadoRepository = new ResultadoRepository(application);
-        this.mejoresresultados = resultadoRepository.obtenerDiezMejoresResultados();
+        this.mejoresResultados = resultadoRepository.obtenerDiezMejoresResultados();
     }
 
     public void insertar(Resultado resultado) {
@@ -23,7 +22,7 @@ public class ResultadoViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<Resultado>> obtenerDiezMejoresResultados() {
-        return this.mejoresresultados;
+        return this.mejoresResultados;
     }
 
     public void borrarTodos() {

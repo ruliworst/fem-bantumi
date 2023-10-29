@@ -1,4 +1,4 @@
-package es.upm.miw.bantumi;
+package es.upm.miw.bantumi.fragments.dialogs;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -7,6 +7,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.fragment.app.DialogFragment;
+
+import es.upm.miw.bantumi.JuegoBantumi;
+import es.upm.miw.bantumi.MainActivity;
+import es.upm.miw.bantumi.R;
 
 public class RestartDialog extends DialogFragment {
     @NonNull
@@ -21,21 +25,11 @@ public class RestartDialog extends DialogFragment {
                 .setMessage(R.string.reiniciarPregunta)
                 .setPositiveButton(
                         getString(android.R.string.ok),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                main.juegoBantumi.inicializar(JuegoBantumi.Turno.turnoJ1);
-                            }
-                        }
+                        (dialog, which) -> main.juegoBantumi.inicializar(JuegoBantumi.Turno.turnoJ1)
                 )
                 .setNegativeButton(
                         getString(android.R.string.cancel),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                main.finish();
-                            }
-                        }
+                        (dialog, which) -> main.finish()
                 );
 
         return builder.create();

@@ -26,7 +26,6 @@ public class ResultadoListAdapter extends ListAdapter<Resultado, ResultadoViewHo
     }
 
     public static class ResultadoDiff extends DiffUtil.ItemCallback<Resultado> {
-
         @Override
         public boolean areItemsTheSame(@NonNull Resultado oldItem, @NonNull Resultado newItem) {
             return oldItem == newItem;

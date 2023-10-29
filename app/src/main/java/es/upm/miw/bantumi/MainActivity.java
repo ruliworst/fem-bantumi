@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
@@ -21,11 +20,15 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.time.format.DateTimeFormatter;
 
+import es.upm.miw.bantumi.fragments.dialogs.FinalAlertDialog;
+import es.upm.miw.bantumi.fragments.dialogs.RecoverDialog;
+import es.upm.miw.bantumi.fragments.dialogs.RestartDialog;
 import es.upm.miw.bantumi.model.BantumiViewModel;
 import es.upm.miw.bantumi.model.resultado.Resultado;
 import es.upm.miw.bantumi.model.resultado.ResultadoBuilder;
@@ -35,9 +38,9 @@ public class MainActivity extends AppCompatActivity {
 
     protected static final String LOG_TAG = "MiW";
 
-    JuegoBantumi juegoBantumi;
+    public JuegoBantumi juegoBantumi;
 
-    BantumiViewModel bantumiVM;
+    BantumiViewModel bantumiViewModel;
 
     int numInicialSemillas;
 
@@ -52,18 +55,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        this.setNombreJugador();
         this.resultadoViewModel = new ViewModelProvider(this).get(ResultadoViewModel.class);
 
         // Instancia el ViewModel y el juego, y asigna observadores a los huecos
         numInicialSemillas = getResources().getInteger(R.integer.intNumInicialSemillas);
-        bantumiVM = new ViewModelProvider(this).get(BantumiViewModel.class);
+        bantumiViewModel = new ViewModelProvider(this).get(BantumiViewModel.class);
         juegoBantumi = new JuegoBantumi(
                 MainActivity.this,
                 this,
-                bantumiVM,
+                bantumiViewModel,
                 JuegoBantumi.Turno.turnoJ1,
                 numInicialSemillas);
         crearObservadores();
+    }
+
+
+    private void setNombreJugador() {
+        String nombreJugador = this.obtenerNombreAjustes();
+        TextView tvPlayer1 = findViewById(R.id.tvPlayer1);
+        tvPlayer1.setText(nombreJugador);
     }
 
     /**
@@ -73,11 +85,11 @@ public class MainActivity extends AppCompatActivity {
     private void crearObservadores() {
         for (int i = 0; i < JuegoBantumi.NUM_POSICIONES; i++) {
             int finalI = i;
-            bantumiVM.getNumSemillas(i).observe(    // Huecos y almacenes
+            bantumiViewModel.getNumSemillas(i).observe(    // Huecos y almacenes
                     this,
                     integer -> mostrarValor(finalI, juegoBantumi.getSemillas(finalI)));
         }
-        bantumiVM.getTurno().observe(   // Turno
+        bantumiViewModel.getTurno().observe(   // Turno
                 this,
                 turno -> marcarTurno(juegoBantumi.turnoActual())
         );
@@ -177,52 +189,99 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        this.setNombreJugador();
         this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String partidaTemporal = this.leerPartidaGuardada(this.getArchivoPartidaTemporal());
+        juegoBantumi.deserializa(partidaTemporal);
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        try {
+            String partida = juegoBantumi.serializa();
+            FileOutputStream fos = getApplicationContext().openFileOutput(this.getArchivoPartidaTemporal(), Context.MODE_PRIVATE);
+            fos.write(partida.getBytes());
+            fos.close();
+        } catch (IOException exception) {
+            Log.e(LOG_TAG, R.string.IOError + exception.getMessage());
+            exception.printStackTrace();
+        }
+    }
 
     private String getArchivoPartidaGuardada() {
         return "partidaGuardada.txt";
     }
 
+    private String getArchivoPartidaTemporal() {
+        return "partidaTemporal.txt";
+    }
+
+
     private void guardarPartida() {
         try {
-            FileOutputStream fos = getApplicationContext().openFileOutput(this.getArchivoPartidaGuardada(), Context.MODE_PRIVATE);
-            String info = juegoBantumi.serializa();
-            fos.write(info.getBytes());
-            fos.close();
-            Log.i("MiW", "Saved game.");
+            String partida = juegoBantumi.serializa();
+            String partidaGuardada = this.leerPartidaGuardada(this.getArchivoPartidaGuardada());
+
+            if (!partida.equals(partidaGuardada)) {
+                FileOutputStream fos = getApplicationContext().openFileOutput(this.getArchivoPartidaGuardada(), Context.MODE_PRIVATE);
+                fos.write(partida.getBytes());
+                fos.close();
+                Log.i(LOG_TAG, String.valueOf(R.string.partidaGuardada));
+            } else {
+                Snackbar.make(
+                        findViewById(android.R.id.content),
+                        R.string.partidaYaGuardada,
+                        Snackbar.LENGTH_SHORT
+                ).show();
+            }
         } catch (Exception exception) {
-            Log.e("MiW", R.string.IOError + exception.getMessage());
+            Log.e(LOG_TAG, R.string.IOError + exception.getMessage());
             exception.printStackTrace();
         }
     }
 
     private void recuperarPartida() {
-        boolean hayContenido = false;
         try {
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(openFileInput(this.getArchivoPartidaGuardada())));
-            String estadoPartida = br.readLine();
-            if (!estadoPartida.isEmpty() && !estadoPartida.equals(juegoBantumi.serializa())) {
-                this.infoPartida = estadoPartida;
-                hayContenido = true;
-                new RecoverDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
+            String partidaGuardada = this.leerPartidaGuardada(this.getArchivoPartidaGuardada());
+            String partida = juegoBantumi.serializa();
+
+            if (!partidaGuardada.isEmpty()) {
+                if (partida.equals(partidaGuardada)) {
+                    Snackbar.make(
+                            findViewById(android.R.id.content),
+                            R.string.txtPartidaYaRecuperada,
+                            Snackbar.LENGTH_SHORT
+                    ).show();
+                } else {
+                    this.infoPartida = partidaGuardada;
+                    new RecoverDialog().show(getSupportFragmentManager(), "ALERT_DIALOG");
+                }
+            } else {
+                Snackbar.make(
+                        findViewById(android.R.id.content),
+                        R.string.sinPartidasGuardadas,
+                        Snackbar.LENGTH_SHORT
+                ).show();
             }
-            br.close();
         } catch (Exception exception) {
-            Log.e("MiW", R.string.IOError + exception.getMessage());
+            Log.e(LOG_TAG, R.string.IOError + exception.getMessage());
             exception.printStackTrace();
         }
+    }
 
-        if (!hayContenido) {
-            Snackbar.make(
-                    findViewById(android.R.id.content),
-                    "No hay ninguna partida guardada.",
-                    Snackbar.LENGTH_SHORT
-            ).show();
+    private String leerPartidaGuardada(String ruta) {
+        String partida;
+
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(ruta)));
+            partida = br.readLine();
+            br.close();
+        } catch (IOException exception) {
+            return "";
         }
+
+        return partida;
     }
 
     /**
@@ -265,14 +324,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setNombreJugador() {
-        String nombre = this.obtenerNombreAjustes();
-        TextView tvJugador1 = findViewById(R.id.tvPlayer1);
-        tvJugador1.setText(nombre);
-    }
-
     private String obtenerNombreAjustes() {
         String nombre = preferences.getString(getString(R.string.nombreJugadorKey), getString(R.string.txtPlayer1));
+
         return nombre.isEmpty() ? getString(R.string.txtPlayer1) : nombre;
     }
 

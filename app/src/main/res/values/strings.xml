@@ -54,10 +54,15 @@
     <!-- Recuperar partida -->
     <string name="txtTituloRecuperar">Recuperar partida</string>
     <string name="txtRecuperarPartida">¿Desea recuperar la anterior partida?</string>
+    <string name="txtPartidaYaRecuperada">Esta partida ya ha sido recuperada.</string>
 
     <!-- Logs -->
-    <string name="miwTag">MiW</string>
     <string name="IOError">FILE I/O ERROR</string>
+    <string name="serializaError">No ha sido posible serializar el objeto.</string>
+    <string name="deserializaError">No ha sido posible deserializar el objeto.</string>
+    <string name="partidaGuardada">Partida guardada.</string>
+    <string name="partidaYaGuardada">Esta partida ya ha sido guardada.</string>
+    <string name="sinPartidasGuardadas">No hay partidas guardadas.</string>
 
     <!-- Preferencias -->
     <string name="nombreJugadorKey">nombreJugador</string>

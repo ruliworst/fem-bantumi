@@ -21,13 +21,12 @@ public abstract class ResultadoRoomDatabase extends RoomDatabase {
 
     private static volatile ResultadoRoomDatabase INSTANCE;
 
-
     static ResultadoRoomDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (ResultadoRoomDatabase.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                                    ResultadoRoomDatabase.class, DATABASE_NAME)
+                    INSTANCE = Room
+                            .databaseBuilder(context.getApplicationContext(), ResultadoRoomDatabase.class, DATABASE_NAME)
                             .build();
                 }
             }

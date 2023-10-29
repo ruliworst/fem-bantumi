@@ -19,7 +19,7 @@ public class JuegoBantumi {
     // Posiciones 7-12: campo jugador 2
     // Posición 13: depósito jugador 2
 
-    private final BantumiViewModel bantumiVM;
+    private final BantumiViewModel bantumiViewModel;
 
     // Turno juego
     public enum Turno {
@@ -30,6 +30,7 @@ public class JuegoBantumi {
     private final int numInicialSemillas;
 
     private final Context context;
+
     private final Activity activity;
 
     /**
@@ -43,12 +44,12 @@ public class JuegoBantumi {
     public JuegoBantumi(
             Context context,
             Activity activity,
-            BantumiViewModel bantumiVM,
+            BantumiViewModel bantumiViewModel,
             Turno turno,
             int numInicialSemillas) {
         this.context = context;
         this.activity = activity;
-        this.bantumiVM = bantumiVM;
+        this.bantumiViewModel = bantumiViewModel;
         this.numInicialSemillas = numInicialSemillas;
         if (campoVacio(Turno.turnoJ1) && campoVacio(Turno.turnoJ2)) { // Inicializa sólo si está vacío!!!
             inicializar(turno);
@@ -60,7 +61,7 @@ public class JuegoBantumi {
      * @return Número de semillas en el hueco <i>pos</i>
      */
     public int getSemillas(int pos) {
-        return bantumiVM.getNumSemillas(pos).getValue();
+        return bantumiViewModel.getNumSemillas(pos).getValue();
     }
 
     /**
@@ -70,7 +71,7 @@ public class JuegoBantumi {
      * @param valor número de semillas
      */
     public void setSemillas(int pos, int valor) {
-        bantumiVM.setNumSemillas(pos, valor);
+        bantumiViewModel.setNumSemillas(pos, valor);
     }
 
     /**
@@ -191,7 +192,7 @@ public class JuegoBantumi {
      * @return turno actual
      */
     public Turno turnoActual() {
-        return bantumiVM.getTurno().getValue();
+        return bantumiViewModel.getTurno().getValue();
     }
 
     /**
@@ -200,7 +201,7 @@ public class JuegoBantumi {
      * @param turno
      */
     public void setTurno(Turno turno) {
-        bantumiVM.setTurno(turno);
+        bantumiViewModel.setTurno(turno);
     }
 
     /**
@@ -209,31 +210,45 @@ public class JuegoBantumi {
      * @return juego serializado
      */
     public String serializa() {
-        JSONObject info = new JSONObject();
+        JSONObject partida = new JSONObject();
+
         try {
-            JSONObject casillas = new JSONObject();
-            for (int i = 0; i <= 13; i++) {
-                String numero = Integer.toString(i);
-                if (i < 10) {
+            partida.put("casillas", this.getCasillasJSONObject());
+            partida.put("turno", this.turnoActual());
+        } catch (JSONException exception) {
+            Log.e(MainActivity.LOG_TAG, String.valueOf(R.string.serializaError));
+        }
+
+        return partida.toString();
+    }
+
+    private JSONObject getCasillasJSONObject() {
+        JSONObject casillas = new JSONObject();
+
+        try {
+            for (int numCasilla = 0; numCasilla <= 13; numCasilla++) {
+                String numero = Integer.toString(numCasilla);
+
+                if (numCasilla < 10) {
                     numero = "0" + numero;
                 }
+
                 int id = context.getResources().getIdentifier("casilla_" + numero, "id", context.getPackageName());
+
                 if (numero.equals("13") || numero.equals("06")) {
                     TextView tv = activity.findViewById(id);
-                    casillas.put("casilla_" + numero,  tv.getText());
+                    casillas.put("casilla_" + numero, tv.getText());
                 } else {
                     Button button = activity.findViewById(id);
                     casillas.put("casilla_" + numero, button.getText());
                 }
             }
 
-            info.put("casillas", casillas);
-            info.put("turno", this.turnoActual());
         } catch (JSONException exception) {
-            Log.e("MiW", "It was not possible to serialize the information.");
+            Log.e(MainActivity.LOG_TAG, String.valueOf(R.string.serializaError));
         }
 
-        return info.toString();
+        return casillas;
     }
 
     /**
@@ -243,28 +258,38 @@ public class JuegoBantumi {
      */
     public void deserializa(String juegoSerializado) {
         try {
-            JSONObject info = new JSONObject(juegoSerializado);
-            JSONObject casillas = info.getJSONObject("casillas");
-
-            for (int i = 0; i <= 13; i++) {
-                String numero = Integer.toString(i);
-                if (i < 10) {
-                    numero = "0" + numero;
-                }
-                String numeroGuardado = casillas.getString("casilla_" + numero);
-                int id = context.getResources().getIdentifier("casilla_" + numero, "id", context.getPackageName());
-                if (numero.equals("13") || numero.equals("06")) {
-                    TextView tv = activity.findViewById(id);
-                    tv.setText(numeroGuardado);
-                } else {
-                    Button button = activity.findViewById(id);
-                    button.setText(numeroGuardado);
-                }
-            }
-            Turno turno = Turno.valueOf(info.getString("turno"));
-            this.setTurno(turno);
+            JSONObject partida = new JSONObject(juegoSerializado);
+            this.deserializarCasillas(partida);
+            this.deserializarTurno(partida);
         } catch (JSONException exception) {
-            Log.e("MiW", "It was not possible to deserialize the information.");
+            Log.e(MainActivity.LOG_TAG, String.valueOf(R.string.deserializaError));
         }
+    }
+
+    public void deserializarCasillas(JSONObject partida) throws JSONException {
+        JSONObject casillas = partida.getJSONObject("casillas");
+        for (int numCasilla = 0; numCasilla <= 13; numCasilla++) {
+            String numero = Integer.toString(numCasilla);
+
+            if (numCasilla < 10) {
+                numero = "0" + numero;
+            }
+
+            String numeroGuardado = casillas.getString("casilla_" + numero);
+            int id = context.getResources().getIdentifier("casilla_" + numero, "id", context.getPackageName());
+
+            if (numero.equals("13") || numero.equals("06")) {
+                TextView tv = activity.findViewById(id);
+                tv.setText(numeroGuardado);
+            } else {
+                Button button = activity.findViewById(id);
+                button.setText(numeroGuardado);
+            }
+        }
+    }
+
+    public void deserializarTurno(JSONObject partida) throws JSONException {
+        Turno turno = Turno.valueOf(partida.getString("turno"));
+        this.setTurno(turno);
     }
 }

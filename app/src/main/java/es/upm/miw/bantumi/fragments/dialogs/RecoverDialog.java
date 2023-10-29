@@ -1,4 +1,4 @@
-package es.upm.miw.bantumi;
+package es.upm.miw.bantumi.fragments.dialogs;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -7,6 +7,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.fragment.app.DialogFragment;
+
+import es.upm.miw.bantumi.MainActivity;
+import es.upm.miw.bantumi.R;
 
 public class RecoverDialog extends DialogFragment {
     @NonNull
@@ -21,13 +24,7 @@ public class RecoverDialog extends DialogFragment {
                 .setMessage(R.string.txtRecuperarPartida)
                 .setPositiveButton(
                         getString(android.R.string.ok),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                main.juegoBantumi.deserializa(main.infoPartida);
-                            }
-                        }
-                )
+                        (dialog, which) -> main.juegoBantumi.deserializa(main.infoPartida))
                 .setNegativeButton(
                         getString(android.R.string.cancel),
                         (dialog, which) -> {}

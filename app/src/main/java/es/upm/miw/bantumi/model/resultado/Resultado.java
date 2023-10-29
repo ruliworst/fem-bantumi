@@ -43,7 +43,6 @@ public class Resultado {
         this.ganador = ganador;
     }
 
-
     public String getFecha() {
         return this.fecha;
     }
